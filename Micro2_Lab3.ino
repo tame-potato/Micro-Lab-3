@@ -73,7 +73,7 @@ void setup() {
 
 }
 
-// Screen update every 1000ms
+// Screen update every 1000ms w/ interrupt /////////////////////////////////////////////
 ISR(TIMER1_COMPA_vect){
 
   update_date();
@@ -88,6 +88,7 @@ String get_RTC(){
   uint8_t secRAW, minRAW, hrRAW, secs, mins, hrs;
   String secsString, minsString, hrsString;
 
+  // Request time registers from RTC through I2C
   Wire.beginTransmission(RTC);
   Wire.write(0x00);
   Wire.endTransmission(false);
@@ -96,11 +97,13 @@ String get_RTC(){
   secRAW = Wire.read();
   minRAW = Wire.read();
   hrRAW = Wire.read();
-  
+
+  // Decode the received registers
   secs = (secRAW>>4 & BIT_MASK) * 10 + (secRAW & BIT_MASK); 
   mins = (minRAW>>4 & BIT_MASK) * 10 + (minRAW & BIT_MASK); 
   hrs = (hrRAW>>4 & BIT_MASK) * 10 + (hrRAW & BIT_MASK);
 
+  // If single digit quantity add eading zero to mantain constant string length
   if (secs<10) secsString = "0" + String(secs);
   else secsString = String(secs);
   if (mins<10) minsString = "0" + String(mins);
@@ -112,6 +115,7 @@ String get_RTC(){
   
 }
 
+// Update time displayed on screen ////////////////////////////////////////////////////
 void update_date(){
   
   lcd.setCursor(0, 0);
@@ -119,6 +123,7 @@ void update_date(){
   
 }
 
+// Update motor speed and direction displayed on screen ///////////////////////////////
 void update_motor_status(){
   
   lcd.setCursor(7,1);
@@ -132,29 +137,7 @@ void update_motor_status(){
   
 }
 
-void ir_function(decode_results *irInput){
-
-  switch(irInput->value){
-
-  // Volume + button
-  case 0xFF629D:
-    if (percent <= 95) percent += 5;
-    break;
-
-  // Volume - button
-  case 0xFFA857: 
-    if (percent >= 10) percent -= 5;    
-    break;
-
-  // Play/Pause button
-  case 0xFF02FD: 
-    cw = !cw;    
-    break;
-
-  }
-  
-}
-
+// Poll pushbutton including a debounce routine //////////////////////////////////////////
 bool debounce(unsigned long currTime){
 
   bool validPress = false;
@@ -182,16 +165,39 @@ bool debounce(unsigned long currTime){
   
 }
 
+// Check IR receiver for new input and match inputs with actions /////////////////////
 void check_IR(){
 
   decode_results irInput;
 
   if (irRemote.decode(&irInput)){
-      ir_function(&irInput);
+    
+      // Valid IR inputs
+      switch(irInput.value){
+        
+      // Volume + button
+      case 0xFF629D:
+        if (percent <= 95) percent += 5;
+        break;
+    
+      // Volume - button
+      case 0xFFA857: 
+        if (percent >= 10) percent -= 5;    
+        break;
+    
+      // Play/Pause button
+      case 0xFF02FD: 
+        cw = !cw;    
+        break;
+    
+      }
+      
       irRemote.resume();
   }
 }
 
+
+// Main loop /////////////////////////////////////////////////////////////////////////
 void loop() {
 
   static unsigned long currTime;
@@ -199,12 +205,15 @@ void loop() {
 
   currTime = millis();
 
+  // Check IR receiver for input
   check_IR();
 
+  // Check for button press and flip direction if detected
   if (debounce(currTime)){
     cw = !cw;  
   }
 
+  // Set direction of rotation based on state of cw variable
   if (cw){
     
     digitalWrite(M1_CW, HIGH);
@@ -218,9 +227,10 @@ void loop() {
     
   }
 
-  // 0% represents a PWM output of 90 which is the minimum speed at which the motor remains turning
+  // 0% represents a PWM output of 90 (30% Duty Cycle) which is the minimum speed at which the motor remains turning
   analogWrite(M1_PWM, percent*165/100 + 90);
 
+  // Update time from RTC
   currDate = get_RTC();
 
 }
