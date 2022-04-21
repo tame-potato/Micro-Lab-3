@@ -63,7 +63,7 @@ void setup() {
   TCCR1B = 0; // set timer control register B to 0
   TCNT1 = 0; // initialize timer/counter register to 0
 
-  OCR1A = 15624; // compare register value w/ 1024 prescaler, equivalent to 1000ms must be compatible with the value set for TIMER_FSM
+  OCR1A = 15624; // compare register value w/ 1024 prescaler, equivalent to 1000ms
   
   TCCR1B |= (1 << WGM12); // set the WGM12 bit of register TCCR1B to enable CTC
   TCCR1B |= (1 << CS12) | (1 << CS10); // set the CS10 and CS12 bit of the register TCCRB to enable prescaler 1024
