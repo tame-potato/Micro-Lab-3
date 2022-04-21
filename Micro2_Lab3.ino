@@ -23,7 +23,6 @@ const uint8_t BIT_MASK = 0x0F,
               M1_CW = 4,
               M1_CCW = 5,
               BUTTON = 2;
-String currDate;
               
 
 // Global Variables ////////////////////////////////////////////////////////////////////
@@ -31,6 +30,7 @@ LiquidCrystal lcd(RS, RW, E, D0, D1, D2, D3, D4, D5, D6, D7);
 IRrecv irRemote(SIG);
 uint8_t percent = 75;
 bool cw = true;
+String currDate;
 
 void setup() {
 
@@ -82,7 +82,7 @@ ISR(TIMER1_COMPA_vect){
   
 }
 
-// Get the date and time information from the RTC module through I2C////////////////////
+// Get the date and time information from the RTC module through I2C ///////////////////
 String get_RTC(){
 
   uint8_t secRAW, minRAW, hrRAW, secs, mins, hrs;
@@ -103,7 +103,7 @@ String get_RTC(){
   mins = (minRAW>>4 & BIT_MASK) * 10 + (minRAW & BIT_MASK); 
   hrs = (hrRAW>>4 & BIT_MASK) * 10 + (hrRAW & BIT_MASK);
 
-  // If single digit quantity add eading zero to mantain constant string length
+  // If single digit quantity add leading zero to mantain constant string length
   if (secs<10) secsString = "0" + String(secs);
   else secsString = String(secs);
   if (mins<10) minsString = "0" + String(mins);
@@ -137,7 +137,7 @@ void update_motor_status(){
   
 }
 
-// Poll pushbutton including a debounce routine //////////////////////////////////////////
+// Poll pushbutton including a debounce routine ///////////////////////////////////////
 bool debounce(unsigned long currTime){
 
   bool validPress = false;
